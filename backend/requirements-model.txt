@@ -1,0 +1,7 @@
+# Heavy local-model dependencies (~1-2 GB). Kept separate from core deps so the
+# heuristic-only image stays small. Installed into the image only when the
+# Docker build arg WITH_MODEL=true. The model weights are baked in at build
+# time so the running container needs NO internet access (required for a
+# no-egress VPC or an air-gapped on-prem deployment).
+transformers>=4.44.0
+torch>=2.2.0

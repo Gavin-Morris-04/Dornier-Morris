@@ -1,0 +1,31 @@
+# Deployment-agnostic compose file.
+#
+# The same definition deploys to a customer VPC or on-prem. What changes between
+# environments is supplied via the .env file (copy .env.example -> .env), never
+# by editing this file.
+#
+#   Heuristic-only:   docker compose up --build
+#   With local model: WITH_MODEL=true docker compose up --build
+#
+services:
+  backend:
+    build:
+      context: ./backend
+      args:
+        # Toggle the baked-in local model. Defaults to false for a small image.
+        WITH_MODEL: ${WITH_MODEL:-false}
+    image: shield-backend:latest
+    restart: unless-stopped
+    environment:
+      # Swap the local detector model without rebuilding code.
+      AI_DETECTOR_MODEL: ${AI_DETECTOR_MODEL:-roberta-base-openai-detector}
+    ports:
+      - "8000:8000"
+    # No outbound internet is required at runtime once the model is baked in.
+    # On-prem/air-gapped deployments can attach this to an internal-only network.
+    networks:
+      - shield
+
+networks:
+  shield:
+    driver: bridge

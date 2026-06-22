@@ -1,33 +1,80 @@
+import hashlib
+from collections import OrderedDict
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI()
+from app.detector import ai_detector, phishing_heuristics
 
-# Enable CORS so your secure React plugin frontend can communicate with localhost API
+# Bounded in-process LRU cache keyed by a hash of the email body. Re-opening the
+# same email returns instantly and never re-runs the (slow) model. We store only
+# the hash, not the text, so no email content lingers in memory beyond the call.
+_CACHE_MAX = 512
+_verdict_cache: "OrderedDict[str, dict]" = OrderedDict()
+
+
+def _cache_key(text: str) -> str:
+    return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
+
+app = FastAPI(title="AI Email Security Shield", version="0.2.0")
+
+# CORS so the Outlook task pane (served from https://localhost:3000) can reach
+# this API. Keep this list tight in production - "*" with allow_credentials is
+# rejected by browsers anyway and is a security smell.
+ALLOWED_ORIGINS = [
+    "https://localhost:3000",
+    "https://localhost:5173",  # default Vite dev port
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, swap with your exact hosted React frontend URL
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
+
 
 class EmailPayload(BaseModel):
     text: str
 
+
+@app.get("/health")
+async def health():
+    """Liveness probe + which detection path is active."""
+    pipe = ai_detector._ensure_pipeline()
+    return {"status": "ok", "ai_engine": "model" if pipe else "heuristic"}
+
+
 @app.post("/api/analyze")
 async def analyze_email(payload: EmailPayload):
-    # Core Phase 1 placeholder logic.
-    # Replace this section with your transformer model or API evaluation tool.
-    sample_text = payload.text.lower()
-    
-    if "kindly" in sample_text or "urgent" in sample_text:
-        ai_confidence = 88
-    else:
-        ai_confidence = 14
+    """
+    Analyze raw email text fully in-process. No text leaves this server.
+    Returns an AI-generation estimate plus explainable phishing signals.
+    """
+    key = _cache_key(payload.text)
+    cached = _verdict_cache.get(key)
+    if cached is not None:
+        _verdict_cache.move_to_end(key)  # mark as recently used
+        return {**cached, "cached": True}
 
-    return {
-        "ai_confidence": ai_confidence,
-        "status": "success"
+    ai = ai_detector.score(payload.text)
+    phish = phishing_heuristics.analyze(payload.text)
+
+    result = {
+        "status": "success",
+        "ai_confidence": ai["ai_confidence"],
+        "ai_method": ai["method"],
+        "phishing": {
+            "score": phish.score,
+            "level": phish.level,
+            "reasons": phish.reasons,
+            "links": phish.links,  # handed to the link crawler in Phase 2
+        },
     }
+
+    _verdict_cache[key] = result
+    if len(_verdict_cache) > _CACHE_MAX:
+        _verdict_cache.popitem(last=False)  # evict least-recently-used
+
+    return {**result, "cached": False}
