@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.detector import ai_detector, phishing_heuristics
+from app.detector import ai_detector, phishing_engine
 
 # Bounded in-process LRU cache keyed by a hash of the email body. Re-opening the
 # same email returns instantly and never re-runs the (slow) model. We store only
@@ -41,9 +41,12 @@ class EmailPayload(BaseModel):
 
 @app.get("/health")
 async def health():
-    """Liveness probe + which detection path is active."""
-    pipe = ai_detector._ensure_pipeline()
-    return {"status": "ok", "ai_engine": "model" if pipe else "heuristic"}
+    """Liveness probe + which detection path is active for each detector."""
+    return {
+        "status": "ok",
+        "ai_engine": "model" if ai_detector.model_available else "heuristic",
+        "phishing_engine": "model+heuristics" if phishing_engine.model_available else "heuristics",
+    }
 
 
 @app.post("/api/analyze")
@@ -59,7 +62,7 @@ async def analyze_email(payload: EmailPayload):
         return {**cached, "cached": True}
 
     ai = ai_detector.score(payload.text)
-    phish = phishing_heuristics.analyze(payload.text)
+    phish = phishing_engine.analyze(payload.text)
 
     result = {
         "status": "success",
@@ -68,6 +71,7 @@ async def analyze_email(payload: EmailPayload):
         "phishing": {
             "score": phish.score,
             "level": phish.level,
+            "method": phish.method,
             "reasons": phish.reasons,
             "links": phish.links,  # handed to the link crawler in Phase 2
         },

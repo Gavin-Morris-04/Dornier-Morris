@@ -1,0 +1,17 @@
+text,is_phishing,is_ai
+"Hi Mark, can you send over the Q2 numbers when you get a sec? Need them for the 3pm. Thanks!",0,0
+"hey running late, grab me a coffee? back in 10",0,0
+"Reminder: team lunch moved to Thursday 12:30 at the usual place. Lmk if you can't make it.",0,0
+"Sarah - the client pushed the deadline to Friday. Can we sync tomorrow morning to re-plan? cheers",0,0
+"Dear Team, I hope this email finds you well. I am writing to provide a brief update on our ongoing initiatives. Furthermore, it is important to note that we have streamlined several internal processes to enhance overall efficiency. Should you have any questions, please do not hesitate to reach out at your earliest convenience.",0,1
+"Hello, Thank you for your inquiry. I would be happy to assist you with onboarding. To ensure a smooth experience, please review the attached guide. Moreover, I look forward to collaborating with you and remain available should you require further clarification.",0,1
+"Good afternoon, I wanted to follow up regarding the proposal. In today's competitive landscape, it is essential to navigate these decisions carefully. Rest assured, our team is committed to delivering value. I look forward to your feedback.",0,1
+"URGENT: Your account has been suspended. Verify your identity immediately at http://secure-login-verify.com/account to restore access or it will be permanently deleted within 24 hours.",1,0
+"FINAL NOTICE: Your payment failed. Update your billing information now at http://192.168.45.7/billing to avoid service interruption.",1,0
+"Hi, this is the IT department. We detected unusual activity. Please confirm your login and password by replying to this email so we can secure your account.",1,0
+"You have won a $500 gift card! Click http://bit.ly/claim-prize now and enter your bank account details to receive your reward. Act now, offer expires today!",1,0
+"Dear Valued Customer, We hope this message finds you well. Our records indicate that your account requires immediate verification. Kindly confirm your credentials at your earliest convenience by visiting the secure portal. Failure to act promptly may result in suspension of services. Rest assured this is a routine security measure.",1,1
+"Dear User, I am writing to inform you that suspicious activity has been detected on your account. To safeguard your information, please do not hesitate to verify your identity immediately via the link provided. Thank you for your understanding and prompt cooperation in this important matter.",1,1
+"Greetings, As part of our ongoing commitment to security, we kindly request that you update your payment details. Furthermore, please navigate to the secure link below to complete this essential step. We look forward to your prompt attention to this matter.",1,1
+"Hey it's Dave from accounting, can you wire the vendor payment today? Account details attached, it's urgent the CFO needs it done before EOD.",1,0
+"Morning all, attaching the slides from yesterday's review. Couple of typos on slide 4 I'll fix later. Ping me with questions.",0,0

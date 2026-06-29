@@ -17,7 +17,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     # HuggingFace caches weights here; we pre-populate it at build time.
     HF_HOME=/models \
-    AI_DETECTOR_MODEL=roberta-base-openai-detector
+    AI_DETECTOR_MODEL=roberta-base-openai-detector \
+    PHISHING_MODEL=
 
 WORKDIR /app
 
@@ -32,7 +33,10 @@ ARG WITH_MODEL=false
 COPY requirements-model.txt .
 RUN if [ "$WITH_MODEL" = "true" ]; then \
         pip install --no-cache-dir -r requirements-model.txt && \
-        python -c "from transformers import pipeline; pipeline('text-classification', model='$AI_DETECTOR_MODEL')" ; \
+        python -c "from transformers import pipeline; pipeline('text-classification', model='$AI_DETECTOR_MODEL')" && \
+        if [ -n "$PHISHING_MODEL" ]; then \
+            python -c "from transformers import pipeline; pipeline('text-classification', model='$PHISHING_MODEL')" ; \
+        fi ; \
     fi
 
 # --- application code ---
